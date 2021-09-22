@@ -5,7 +5,7 @@ using SFML.Window;
 
 namespace ElaCaster
 {
-    public class Program
+    public class ElaCaster
     {
         public static void Main(string[] args)
         {
