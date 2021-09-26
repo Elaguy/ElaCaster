@@ -13,7 +13,7 @@ namespace ElaCaster
         private const int HEIGHT = 512;
 
         private float playerX, playerY;
-        private float playerDeltaX, playerDeltaY, playerAngle;
+        private float playerDeltaX, playerDeltaY, playerAngle; // playerAngle is in rad
         private RectangleShape playerShape;
 
         private int mapX = 8, mapY = 8, tileSize = 64;
@@ -62,6 +62,9 @@ namespace ElaCaster
             playerShape = new RectangleShape(new Vector2f(8.0f, 8.0f));
             playerShape.Position = new Vector2f(playerX, playerY);
             playerShape.FillColor = new Color(255, 255, 0);
+
+            // This is relative to the position!
+            // For some reason +X is left and +Y is up, hence (4.0f, 4.0f)
             playerShape.Origin = new Vector2f(4.0f, 4.0f);
         }
 
@@ -103,13 +106,14 @@ namespace ElaCaster
             window.Draw(playerShape);
 
             // Draw the direction/angle line originating from the player
-            int lineThickness = 5, lineLength = 20;
+            int lineThickness = 4, lineLength = 20;
             Color lineColor = new Color(255, 255, 0);
             RectangleShape dirLine = new RectangleShape
             {
                 Size = new Vector2f(lineThickness, lineLength),
                 Position = new Vector2f(playerX, playerY),
-                Rotation = (float)((Math.Atan(playerDeltaY / playerDeltaX)) * (180 / Math.PI)),
+                Origin = new Vector2f(lineThickness / 2, lineThickness / 2),
+                Rotation = (float)((playerAngle * (180 / Math.PI)) - 90),
                 FillColor = lineColor
             };
             window.Draw(dirLine);
@@ -131,7 +135,7 @@ namespace ElaCaster
                 // Update player position in the playerShape obj.
                 // Kind of annoying though and need to see if there's a
                 // more elegant way
-                playerShape.Position =  new Vector2f(playerX, playerY);
+                playerShape.Position = new Vector2f(playerX, playerY);
             }
 
             if (Keyboard.IsKeyPressed(Keyboard.Key.A))
@@ -151,9 +155,6 @@ namespace ElaCaster
                 playerX -= playerDeltaX * 5;
                 playerY -= playerDeltaY * 5;
 
-                if (playerAngle > 2 * Math.PI)
-                    playerAngle -= (float)(2 * Math.PI);
-
                 playerShape.Position = new Vector2f(playerX, playerY);
             }
 
@@ -162,6 +163,9 @@ namespace ElaCaster
                 playerAngle += 0.1f;
                 playerDeltaX = (float)Math.Cos(playerAngle);
                 playerDeltaY = (float)Math.Sin(playerAngle);
+
+                if (playerAngle > 2 * Math.PI)
+                    playerAngle -= (float)(2 * Math.PI);
 
                 playerShape.Position = new Vector2f(playerX, playerY);
             }
