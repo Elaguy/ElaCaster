@@ -119,6 +119,34 @@ namespace ElaCaster
             window.Draw(dirLine);
         }
 
+        private void DrawRays()
+        {
+            float rayX, rayY;
+            float rayAngle = playerAngle;
+            float xOffset, yOffset;
+            float negCotan = (float)(-1 / Math.Tan(rayAngle));
+
+            for(int r = 0; r < 1; r++)
+            {
+                //// Check horizontal lines ////
+                if(rayAngle > Math.PI) // ray is looking up
+                {
+                    rayY = ((int) playerY >> 6) << 6;
+                    rayX = (float)((playerY - rayY) * negCotan + playerX);
+                    yOffset = -64;
+                    xOffset = (float)(-yOffset * negCotan);
+                }
+
+                if(rayAngle < Math.PI) // ray is looking down
+                {
+                    rayY = (((int)playerY >> 6) << 6) + 64;
+                    rayX = (float)((playerY - rayY) * negCotan + playerX);
+                    yOffset = 64;
+                    xOffset = (float)(-yOffset * negCotan);
+                }
+            }
+        }
+
         private void Update()
         {
             window.DispatchEvents();
@@ -146,8 +174,6 @@ namespace ElaCaster
 
                 if (playerAngle < 0)
                     playerAngle += (float)(2 * Math.PI);
-
-                playerShape.Position = new Vector2f(playerX, playerY);
             }
 
             if (Keyboard.IsKeyPressed(Keyboard.Key.S))
@@ -166,8 +192,6 @@ namespace ElaCaster
 
                 if (playerAngle > 2 * Math.PI)
                     playerAngle -= (float)(2 * Math.PI);
-
-                playerShape.Position = new Vector2f(playerX, playerY);
             }
         }
 
