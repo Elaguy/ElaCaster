@@ -122,44 +122,51 @@ namespace ElaCaster
 
         private void DrawRays()
         {
-            float rayX = 0, rayY = 0;
-            float rayAngle = playerAngle;
-            float xOffset = 0, yOffset = 0;
-            float negCotan = (float)(-1 / Math.Tan(rayAngle));
+            float rayX, rayY;
+            float rayAngle;
+            float xOffset, yOffset;
+            float nCotan;
+            float nTan;
             int rayMapX, rayMapY, rayMapIndex;
+            int depthOfField;
 
-            int depthOfField = 0; // determines how many horiz grid lines to check
             for(int r = 0; r < 1; r++)
             {
-                //// Check horizontal lines ////
-                
-                if(rayAngle > Math.PI) // ray is looking up
+                ////// Check horizontal lines ////
+
+                rayX = 0;  rayY = 0;
+                rayAngle = playerAngle;
+                xOffset = 0; yOffset = 0;
+                nCotan = (float)(-1 / Math.Tan(rayAngle));
+                depthOfField = 0; // determines how many grid lines (either horiz/vert) to check
+
+                if (rayAngle > Math.PI) // ray is looking up
                 {
                     // - 0.0001 is to ensure the tile we're looking at is not the one the player is already in.
                     // Basically prevents the map indexing from lagging behind by 1 tile, leading to the ray cutting
                     // off/hitting wall 1 tile too late
-                    rayY = (float)((((int) playerY >> 6) << 6) - 0.0001);
-                    rayX = (float)((playerY - rayY) * negCotan + playerX);
+                    rayY = (float)((((int)playerY >> 6) << 6) - 0.0001);
+                    rayX = (float)((playerY - rayY) * nCotan + playerX);
                     yOffset = -64;
-                    xOffset = (float)(-yOffset * negCotan);
+                    xOffset = (float)(-yOffset * nCotan);
                 }
 
-                if(rayAngle < Math.PI) // ray is looking down
+                if (rayAngle < Math.PI) // ray is looking down
                 {
                     rayY = (((int)playerY >> 6) << 6) + 64;
-                    rayX = (float)((playerY - rayY) * negCotan + playerX);
+                    rayX = (float)((playerY - rayY) * nCotan + playerX);
                     yOffset = 64;
-                    xOffset = (float)(-yOffset * negCotan);
+                    xOffset = (float)(-yOffset * nCotan);
                 }
 
-                if(rayAngle == 0 || rayAngle == Math.PI) // ray is looking straight to left or right
+                if (rayAngle == 0 || rayAngle == Math.PI) // ray is looking straight to left or right
                 {
                     rayX = playerX;
                     rayY = playerY;
                     depthOfField = 8;
                 }
 
-                while(depthOfField < 8)
+                while (depthOfField < 8)
                 {
                     // convert ray x,y to map tile number/index
                     rayMapX = (int)rayX >> 6;
@@ -182,12 +189,77 @@ namespace ElaCaster
                 }
 
                 // draw the ray line
-                Vertex[] rayLine =
+                Vertex[] rayLineHoriz =
                 {
                     new Vertex(new Vector2f(playerX, playerY), Color.Green),
                     new Vertex(new Vector2f(rayX, rayY), Color.Green)
                 };
-                window.Draw(rayLine, 0, 2, PrimitiveType.Lines);
+                window.Draw(rayLineHoriz, 0, 2, PrimitiveType.Lines);
+
+
+                //// Check vertical lines ////
+
+                rayX = 0; rayY = 0;
+                rayAngle = playerAngle;
+                xOffset = 0; yOffset = 0;
+                nTan = (float)-Math.Tan(rayAngle);
+                depthOfField = 0;
+
+                if ((rayAngle > (Math.PI / 2)) && (rayAngle < (3 * Math.PI / 2))) // ray is looking left
+                {
+                    // - 0.0001 is to ensure the tile we're looking at is not the one the player is already in.
+                    // Basically prevents the map indexing from lagging behind by 1 tile, leading to the ray cutting
+                    // off/hitting wall 1 tile too late
+                    rayX = (float)((((int)playerX >> 6) << 6) - 0.0001);
+                    rayY = (float)((playerX - rayX) * nTan + playerY);
+                    xOffset = -64;
+                    yOffset = (float)(-xOffset * nTan);
+                }
+
+                if ((rayAngle < (Math.PI / 2)) || (rayAngle > (3 * Math.PI / 2))) // ray is looking right
+                {
+                    rayX = (((int)playerX >> 6) << 6) + 64;
+                    rayY = (float)((playerX - rayX) * nTan + playerY);
+                    xOffset = 64;
+                    yOffset = (float)(-xOffset * nTan);
+                }
+
+                if ((rayAngle == (Math.PI / 2)) || (rayAngle == (3 * Math.PI / 2))) // ray is looking straight up or down
+                {
+                    rayX = playerX;
+                    rayY = playerY;
+                    depthOfField = 8;
+                }
+
+                while (depthOfField < 8)
+                {
+                    // convert ray x,y to map tile number/index
+                    rayMapX = (int)rayX >> 6;
+                    rayMapY = (int)rayY >> 6;
+                    rayMapIndex = rayMapY * mapX + rayMapX;
+
+                    if (rayMapIndex >= mapX * mapY || rayMapIndex < 0) // out of bounds
+                        break;
+
+                    if (map[rayMapIndex] == 1) // if in bounds and that index is a wall, then the ray hit a wall
+                        break;
+
+                    else // didn't hit a wall
+                    {
+                        // so increment to next intersection point
+                        rayX += xOffset;
+                        rayY += yOffset;
+                        depthOfField += 1;
+                    }
+                }
+
+                // draw the ray line
+                Vertex[] rayLineVert =
+                {
+                    new Vertex(new Vector2f(playerX + 10, playerY), Color.Red),
+                    new Vertex(new Vector2f(rayX, rayY), Color.Red)
+                };
+                window.Draw(rayLineVert, 0, 2, PrimitiveType.Lines);
             }
         }
 
