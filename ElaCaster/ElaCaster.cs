@@ -74,6 +74,7 @@ namespace ElaCaster
 
             DrawMap();
             DrawPlayer();
+            DrawRays();
 
             window.Display();
         }
@@ -121,17 +122,23 @@ namespace ElaCaster
 
         private void DrawRays()
         {
-            float rayX, rayY;
+            float rayX = 0, rayY = 0;
             float rayAngle = playerAngle;
-            float xOffset, yOffset;
+            float xOffset = 0, yOffset = 0;
             float negCotan = (float)(-1 / Math.Tan(rayAngle));
+            int rayMapX, rayMapY, rayMapIndex;
 
+            int depthOfField = 0; // determines how many horiz grid lines to check
             for(int r = 0; r < 1; r++)
             {
                 //// Check horizontal lines ////
+                
                 if(rayAngle > Math.PI) // ray is looking up
                 {
-                    rayY = ((int) playerY >> 6) << 6;
+                    // - 0.0001 is to ensure the tile we're looking at is not the one the player is already in.
+                    // Basically prevents the map indexing from lagging behind by 1 tile, leading to the ray cutting
+                    // off/hitting wall 1 tile too late
+                    rayY = (float)((((int) playerY >> 6) << 6) - 0.0001);
                     rayX = (float)((playerY - rayY) * negCotan + playerX);
                     yOffset = -64;
                     xOffset = (float)(-yOffset * negCotan);
@@ -144,6 +151,43 @@ namespace ElaCaster
                     yOffset = 64;
                     xOffset = (float)(-yOffset * negCotan);
                 }
+
+                if(rayAngle == 0 || rayAngle == Math.PI) // ray is looking straight to left or right
+                {
+                    rayX = playerX;
+                    rayY = playerY;
+                    depthOfField = 8;
+                }
+
+                while(depthOfField < 8)
+                {
+                    // convert ray x,y to map tile number/index
+                    rayMapX = (int)rayX >> 6;
+                    rayMapY = (int)rayY >> 6;
+                    rayMapIndex = rayMapY * mapX + rayMapX;
+
+                    if (rayMapIndex >= mapX * mapY || rayMapIndex < 0) // out of bounds
+                        break;
+
+                    if (map[rayMapIndex] == 1) // if in bounds and that index is a wall, then the ray hit a wall
+                        break;
+
+                    else // didn't hit a wall
+                    {
+                        // so increment to next intersection point
+                        rayX += xOffset;
+                        rayY += yOffset;
+                        depthOfField += 1;
+                    }
+                }
+
+                // draw the ray line
+                Vertex[] rayLine =
+                {
+                    new Vertex(new Vector2f(playerX, playerY), Color.Green),
+                    new Vertex(new Vector2f(rayX, rayY), Color.Green)
+                };
+                window.Draw(rayLine, 0, 2, PrimitiveType.Lines);
             }
         }
 
