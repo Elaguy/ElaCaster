@@ -29,6 +29,8 @@ namespace ElaCaster
             1,1,1,1,1,1,1,1
         };
 
+        private const float OneDegAsRad = 0.017453f;
+
         public ElaCaster()
         {
             window = new RenderWindow(new VideoMode(WIDTH, HEIGHT), "ElaCaster");
@@ -73,8 +75,8 @@ namespace ElaCaster
             window.Clear(new Color(77, 77, 77));
 
             DrawMap();
-            DrawPlayer();
             DrawRays();
+            DrawPlayer();
 
             window.Display();
         }
@@ -129,16 +131,24 @@ namespace ElaCaster
             float nTan;
             int rayMapX, rayMapY, rayMapIndex;
             int depthOfField;
+            float distH, distV, finalHX, finalHY, finalVX, finalVY;
+            float finalDist;
 
-            for(int r = 0; r < 1; r++)
+            rayAngle = playerAngle - OneDegAsRad * 30; // first ray is 30 deg left of player's angle
+            if (rayAngle < 0)
+                rayAngle += (float)(2 * Math.PI);
+            else if (rayAngle > (2 * Math.PI))
+                rayAngle -= (float)(2 * Math.PI);
+
+            for(int r = 0; r < 60; r++)
             {
                 ////// Check horizontal lines ////
 
                 rayX = 0;  rayY = 0;
-                rayAngle = playerAngle;
                 xOffset = 0; yOffset = 0;
                 nCotan = (float)(-1 / Math.Tan(rayAngle));
                 depthOfField = 0; // determines how many grid lines (either horiz/vert) to check
+                distH = 1000000; finalHX = playerX; finalHY = playerY;
 
                 if (rayAngle > Math.PI) // ray is looking up
                 {
@@ -177,7 +187,13 @@ namespace ElaCaster
                         break;
 
                     if (map[rayMapIndex] == 1) // if in bounds and that index is a wall, then the ray hit a wall
+                    {
+                        finalHX = rayX;
+                        finalHY = rayY;
+                        distH = GetDist(playerX, playerY, finalHX, finalHY);
+
                         break;
+                    }
 
                     else // didn't hit a wall
                     {
@@ -185,25 +201,18 @@ namespace ElaCaster
                         rayX += xOffset;
                         rayY += yOffset;
                         depthOfField += 1;
+
+                        distH = GetDist(playerX, playerY, rayX, rayY);
                     }
                 }
-
-                // draw the ray line
-                Vertex[] rayLineHoriz =
-                {
-                    new Vertex(new Vector2f(playerX, playerY), Color.Green),
-                    new Vertex(new Vector2f(rayX, rayY), Color.Green)
-                };
-                window.Draw(rayLineHoriz, 0, 2, PrimitiveType.Lines);
-
 
                 //// Check vertical lines ////
 
                 rayX = 0; rayY = 0;
-                rayAngle = playerAngle;
                 xOffset = 0; yOffset = 0;
                 nTan = (float)-Math.Tan(rayAngle);
                 depthOfField = 0;
+                distV = 1000000; finalVX = playerX; finalVY = playerY;
 
                 if ((rayAngle > (Math.PI / 2)) && (rayAngle < (3 * Math.PI / 2))) // ray is looking left
                 {
@@ -242,7 +251,13 @@ namespace ElaCaster
                         break;
 
                     if (map[rayMapIndex] == 1) // if in bounds and that index is a wall, then the ray hit a wall
+                    {
+                        finalVX = rayX;
+                        finalVY = rayY;
+                        distV = GetDist(playerX, playerY, finalVX, finalVY);
+
                         break;
+                    }
 
                     else // didn't hit a wall
                     {
@@ -250,16 +265,41 @@ namespace ElaCaster
                         rayX += xOffset;
                         rayY += yOffset;
                         depthOfField += 1;
+
+                        distV = GetDist(playerX, playerY, rayX, rayY);
                     }
+                }
+
+                if(distH < distV) // horiz ray is shorter, use it
+                {
+                    rayX = finalHX;
+                    rayY = finalHY;
+                    finalDist = distH;
+                }
+
+                else // vertical ray is shorter, use it
+                {
+                    rayX = finalVX;
+                    rayY = finalVY;
+                    finalDist = distV;
                 }
 
                 // draw the ray line
                 Vertex[] rayLineVert =
                 {
-                    new Vertex(new Vector2f(playerX + 10, playerY), Color.Red),
+                    new Vertex(new Vector2f(playerX, playerY), Color.Red),
                     new Vertex(new Vector2f(rayX, rayY), Color.Red)
                 };
                 window.Draw(rayLineVert, 0, 2, PrimitiveType.Lines);
+
+                //// Draw "3D" Scene ////
+
+
+                rayAngle += OneDegAsRad;
+                if (rayAngle < 0)
+                    rayAngle += (float)(2 * Math.PI);
+                else if (rayAngle > (2 * Math.PI))
+                    rayAngle -= (float)(2 * Math.PI);
             }
         }
 
@@ -321,6 +361,11 @@ namespace ElaCaster
             RenderWindow window = sender as RenderWindow;
 
             window.Close();
+        }
+
+        private float GetDist(float x1, float y1, float x2, float y2)
+        {
+            return (float)Math.Sqrt(Math.Pow(x2 - x1, 2) + Math.Pow(y2 - y1, 2));
         }
 
         public static void Main(string[] args)
