@@ -293,7 +293,17 @@ namespace ElaCaster
                 window.Draw(rayLineVert, 0, 2, PrimitiveType.Lines);
 
                 //// Draw "3D" Scene ////
+                // Height of 3D scene = 320, Width = r (60) * 8 = 480
+                float lineHeight = (tileSize * (160 * 2)) / finalDist;
+                if (lineHeight > (160 * 2)) // max lineHeight = 160 * 2
+                    lineHeight = 160 * 2;
 
+                float lineVOffset = (320 / 2) - lineHeight / 2; // center line on screen
+
+                RectangleShape wallLine = new RectangleShape(new Vector2f(8, lineHeight));
+                wallLine.FillColor = Color.Red;
+                wallLine.Position = new Vector2f((r * 8) + 512, lineVOffset);
+                window.Draw(wallLine);
 
                 rayAngle += OneDegAsRad;
                 if (rayAngle < 0)
@@ -324,7 +334,7 @@ namespace ElaCaster
 
             if (Keyboard.IsKeyPressed(Keyboard.Key.A))
             {
-                playerAngle -= 0.1f;
+                playerAngle -= 0.05f;
                 playerDeltaX = (float)Math.Cos(playerAngle);
                 playerDeltaY = (float)Math.Sin(playerAngle);
 
@@ -342,7 +352,7 @@ namespace ElaCaster
 
             if (Keyboard.IsKeyPressed(Keyboard.Key.D))
             {
-                playerAngle += 0.1f;
+                playerAngle += 0.05f;
                 playerDeltaX = (float)Math.Cos(playerAngle);
                 playerDeltaY = (float)Math.Sin(playerAngle);
 
