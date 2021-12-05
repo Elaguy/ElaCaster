@@ -292,6 +292,14 @@ namespace ElaCaster
                 };
                 window.Draw(rayLineVert, 0, 2, PrimitiveType.Lines);
 
+                // fix fisheye effect
+                float deltaAngle = playerAngle - rayAngle;
+                if (deltaAngle < 0)
+                    deltaAngle += (float)(2 * Math.PI);
+                else if (deltaAngle > (2 * Math.PI))
+                    deltaAngle -= (float)(2 * Math.PI);
+                finalDist = (float)(finalDist * Math.Cos(deltaAngle));
+
                 //// Draw "3D" Scene ////
                 // Height of 3D scene = 320, Width = r (60) * 8 = 480
                 float lineHeight = (tileSize * (160 * 2)) / finalDist;
