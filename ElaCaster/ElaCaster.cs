@@ -133,6 +133,7 @@ namespace ElaCaster
             int depthOfField;
             float distH, distV, finalHX, finalHY, finalVX, finalVY;
             float finalDist;
+            Color wallColor;
 
             rayAngle = playerAngle - OneDegAsRad * 30; // first ray is 30 deg left of player's angle
             if (rayAngle < 0)
@@ -270,18 +271,22 @@ namespace ElaCaster
                     }
                 }
 
-                if(distH < distV) // horiz ray is shorter, use it
+                //// Finalize the ray ////
+
+                if(distH < distV) // horizontal ray is shorter, use it (horizontal wall hit)
                 {
                     rayX = finalHX;
                     rayY = finalHY;
                     finalDist = distH;
+                    wallColor = new Color(178, 0, 0); // 0.7 * 255 (trunacated) = 178
                 }
 
-                else // vertical ray is shorter, use it
+                else // vertical ray is shorter, use it (vertical wall hit)
                 {
                     rayX = finalVX;
                     rayY = finalVY;
                     finalDist = distV;
+                    wallColor = new Color(229, 0, 0); // 0.9 * 255 (trunacated) = 229
                 }
 
                 // draw the ray line
@@ -309,7 +314,7 @@ namespace ElaCaster
                 float lineVOffset = (320 / 2) - lineHeight / 2; // center line on screen
 
                 RectangleShape wallLine = new RectangleShape(new Vector2f(8, lineHeight));
-                wallLine.FillColor = Color.Red;
+                wallLine.FillColor = wallColor;
                 wallLine.Position = new Vector2f((r * 8) + 512, lineVOffset);
                 window.Draw(wallLine);
 
